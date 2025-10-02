@@ -1,10 +1,30 @@
 plugins {
     id 'java'
-    id "org.jetbrains.kotlin.jvm" version "1.5.21"
-    id "com.github.johnrengelman.shadow" version "7.0.0"
+    id "org.jetbrains.kotlin.jvm" version "2.0.21"
+    id "com.github.johnrengelman.shadow" version "8.1.1"
+    id 'maven-publish'
 }
 
+group 'com.dbschema'
 version '1.20'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(20)
+    }
+    sourceCompatibility = JavaVersion.VERSION_20
+    targetCompatibility = JavaVersion.VERSION_20
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 20
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "20"
+    }
+}
 
 repositories {
     mavenCentral()
@@ -29,4 +49,46 @@ test {
 shadowJar {
     archiveFileName = "mongo-jdbc-standalone-${version}.jar"
     mergeServiceFiles()
+}
+
+publishing {
+    publications {
+        shadow(MavenPublication) { publication ->
+            project.shadow.component(publication)
+            artifactId = 'mongo-jdbc-driver'
+
+            pom {
+                name = 'MongoDB JDBC Driver'
+                description = 'Type 4 JDBC driver that allows Java programs to connect to a MongoDB database'
+                url = 'https://github.com/DataGrip/mongo-jdbc-driver'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        organization = 'JetBrains'
+                        organizationUrl = 'https://www.jetbrains.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/DataGrip/mongo-jdbc-driver.git'
+                    developerConnection = 'scm:git:ssh://github.com/DataGrip/mongo-jdbc-driver.git'
+                    url = 'https://github.com/DataGrip/mongo-jdbc-driver'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'local'
+            url = uri(System.getProperty('maven.repo.local', "${projectDir}/.maven"))
+        }
+    }
 }
